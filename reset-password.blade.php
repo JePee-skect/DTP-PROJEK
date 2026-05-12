@@ -1,0 +1,91 @@
+@extends('layouts.admin')
+@section('title', 'Data PPDB')
+@section('content')
+
+<div class="card-admin overflow-hidden">
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center px-6 py-4 border-b border-slate-100 gap-3">
+        <div>
+            <h2 class="font-extrabold text-gray-900">Data Pendaftar PPSB</h2>
+            <p class="text-xs text-gray-400 mt-0.5 font-medium">Total {{ $ppdbs->total() }} pendaftar</p>
+        </div>
+        <div class="flex items-center gap-4">
+            <form method="GET" action="{{ route('admin.ppdb.index') }}" id="filterFormPpdb">
+                <select name="sekolah" onchange="document.getElementById('filterFormPpdb').submit()" class="text-xs border-gray-200 rounded-lg focus:ring-green-500 focus:border-green-500 py-1.5 pl-3 pr-8 font-medium text-gray-600">
+                    <option value="">Semua Tingkat</option>
+                    <option value="SMP" {{ request('sekolah') == 'SMP' ? 'selected' : '' }}>SMP</option>
+                    <option value="SMA" {{ request('sekolah') == 'SMA' ? 'selected' : '' }}>SMA</option>
+                </select>
+            </form>
+        </div>
+    </div>
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead>
+                <tr class="bg-slate-50 text-xs uppercase tracking-wider text-gray-400">
+                    <th class="text-left px-5 py-3 font-bold">No</th>
+                    <th class="text-left px-5 py-3 font-bold">Nama Lengkap</th>
+                    <th class="text-left px-5 py-3 font-bold">TTL</th>
+                    <th class="text-left px-5 py-3 font-bold">Sekolah</th>
+                    <th class="text-left px-5 py-3 font-bold">No. HP</th>
+                    <th class="text-left px-5 py-3 font-bold">Dokumen</th>
+                    <th class="text-left px-5 py-3 font-bold">Status</th>
+                    <th class="text-left px-5 py-3 font-bold">Aksi</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-50">
+                @forelse($ppdbs as $i => $p)
+                <tr class="hover:bg-slate-50/50 transition-colors">
+                    <td class="px-5 py-4 text-gray-400 font-medium text-xs">{{ $ppdbs->firstItem() + $i }}</td>
+                    <td class="px-5 py-4">
+                        <div class="font-bold text-gray-900">{{ $p->nama_lengkap }}</div>
+                        <div class="text-xs text-gray-400 mt-0.5">{{ Str::limit($p->alamat, 40) }}</div>
+                    </td>
+                    <td class="px-5 py-4 text-gray-500 text-xs">{{ $p->tempat_lahir }}, {{ \Carbon\Carbon::parse($p->tanggal_lahir)->format('d/m/Y') }}</td>
+                    <td class="px-5 py-4">
+                        <span class="badge-{{ strtolower($p->pilihan_sekolah) }} text-xs font-bold px-2.5 py-1 rounded-full">{{ $p->pilihan_sekolah }}</span>
+                    </td>
+                    <td class="px-5 py-4 text-gray-500 text-xs font-medium">{{ $p->no_hp }}</td>
+                    <td class="px-5 py-4">
+                        <div class="flex flex-wrap gap-1">
+                            @if($p->ijazah) <a href="{{ asset('storage/'.$p->ijazah) }}" target="_blank" class="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full hover:bg-blue-200" title="Ijazah"><i class="fas fa-file-alt"></i> Ijazah</a> @endif
+                            @if($p->akta_kelahiran) <a href="{{ asset('storage/'.$p->akta_kelahiran) }}" target="_blank" class="text-[10px] bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full hover:bg-indigo-200" title="Akta Kelahiran"><i class="fas fa-file-alt"></i> Akta</a> @endif
+                            @if($p->pas_foto) <a href="{{ asset('storage/'.$p->pas_foto) }}" target="_blank" class="text-[10px] bg-teal-100 text-teal-700 px-2 py-0.5 rounded-full hover:bg-teal-200" title="Pas Foto"><i class="fas fa-image"></i> Foto</a> @endif
+                            @if($p->kk) <a href="{{ asset('storage/'.$p->kk) }}" target="_blank" class="text-[10px] bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full hover:bg-purple-200" title="Kartu Keluarga"><i class="fas fa-file-alt"></i> KK</a> @endif
+                            @if($p->surat_sehat) <a href="{{ asset('storage/'.$p->surat_sehat) }}" target="_blank" class="text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full hover:bg-emerald-200" title="Surat Sehat"><i class="fas fa-file-medical"></i> Sehat</a> @endif
+                            @if(!$p->ijazah && !$p->akta_kelahiran && !$p->pas_foto && !$p->kk && !$p->surat_sehat)
+                                <span class="text-[10px] text-gray-400 italic">Tidak ada</span>
+                            @endif
+                        </div>
+                    </td>
+                    <td class="px-5 py-4">
+                        <form action="{{ route('admin.ppdb.update', $p) }}" method="POST">
+                            @csrf @method('PATCH')
+                            <select name="status" onchange="this.form.submit()"
+                                class="text-xs font-bold px-2.5 py-1.5 rounded-full border-0 cursor-pointer badge-{{ $p->status }} focus:outline-none">
+                                <option value="pending"  {{ $p->status=='pending'  ? 'selected':'' }}>Pending</option>
+                                <option value="diterima" {{ $p->status=='diterima' ? 'selected':'' }}>Diterima</option>
+                                <option value="ditolak"  {{ $p->status=='ditolak'  ? 'selected':'' }}>Ditolak</option>
+                            </select>
+                        </form>
+                    </td>
+                    <td class="px-5 py-4">
+                        <form action="{{ route('admin.ppdb.destroy', $p) }}" method="POST" onsubmit="return confirm('Hapus data ini?')">
+                            @csrf @method('DELETE')
+                            <button type="submit" class="text-red-500 hover:text-red-700 text-xs font-bold flex items-center gap-1 transition-colors">
+                                <i class="fas fa-trash text-xs"></i> Hapus
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                @empty
+                <tr><td colspan="8" class="px-5 py-14 text-center">
+                    <i class="fas fa-inbox text-4xl text-slate-200 mb-3 block"></i>
+                    <span class="text-gray-400 font-semibold text-sm">Belum ada data pendaftar</span>
+                </td></tr>
+                @endforelse
+            </tbody>
+        </table>
+    </div>
+    <div class="px-6 py-4 border-t border-slate-100">{{ $ppdbs->links() }}</div>
+</div>
+@endsection
